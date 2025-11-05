@@ -5,26 +5,38 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
-    [SerializeField]
-    private MazeCell _mazeCellPrefab;
-    
-    [SerializeField]
-    private int _mazeWidth;
-
-    [SerializeField]
-    private int _mazeDepth;
+    [Header("Maze Settings")]
+    [SerializeField] private MazeCell _mazeCellPrefab;
+    [SerializeField] private int _mazeWidth;
+    [SerializeField] private int _mazeDepth;
+    [SerializeField] private Transform mazeParent; //store all maze cells in one parent obj (so we can easily generate a new maze)
 
     private MazeCell[,] _mazeGrid;
 
     void Start()
     {
+        //create a parent object if none was assigned
+        if (mazeParent == null)
+        {
+            GameObject parentObj = new GameObject("MazeCells");
+            parentObj.transform.SetParent(transform);
+            parentObj.transform.localPosition = Vector3.zero;
+            mazeParent = parentObj.transform;
+        }
+
         _mazeGrid = new MazeCell[_mazeWidth, _mazeDepth];
 
-        for (int x=0; x<_mazeWidth; x++)
+        //instantiate cells and set their parent to "mazeParent"
+        for (int x = 0; x < _mazeWidth; x++)
         {
-            for (int z=0; z<_mazeDepth; z++)
+            for (int z = 0; z < _mazeDepth; z++)
             {
-                _mazeGrid[x, z] = Instantiate(_mazeCellPrefab, new Vector3(x, 0, z), Quaternion.identity);
+                MazeCell newCell = Instantiate(_mazeCellPrefab, new Vector3(x, 0, z), Quaternion.identity);
+
+                //parent under mazeParent for easy cleanup later
+                newCell.transform.SetParent(mazeParent, true);
+
+                _mazeGrid[x, z] = newCell;
             }
         }
 
@@ -105,10 +117,9 @@ public class MazeGenerator : MonoBehaviour
     private void ClearWalls(MazeCell previousCell, MazeCell currentCell)
     {
         if (previousCell == null)
-        {
             return;
-        }
 
+        //move right
         if (previousCell.transform.position.x < currentCell.transform.position.x)
         {
             previousCell.ClearRightWall();
@@ -116,13 +127,15 @@ public class MazeGenerator : MonoBehaviour
             return;
         }
 
-        if (previousCell.transform.position.x < currentCell.transform.position.x)
+        //move left
+        if (previousCell.transform.position.x > currentCell.transform.position.x)
         {
             previousCell.ClearLeftWall();
             currentCell.ClearRightWall();
             return;
         }
 
+        //move forward
         if (previousCell.transform.position.z < currentCell.transform.position.z)
         {
             previousCell.ClearFrontWall();
@@ -130,13 +143,12 @@ public class MazeGenerator : MonoBehaviour
             return;
         }
 
-        if (previousCell.transform.position.z < currentCell.transform.position.z)
+        //move backward
+        if (previousCell.transform.position.z > currentCell.transform.position.z)
         {
             previousCell.ClearBackWall();
             currentCell.ClearFrontWall();
             return;
         }
-
-
     }
 }

@@ -44,6 +44,4 @@ public class MazeCell : MonoBehaviour
     {
         _backWall.SetActive(false);
     }
-
-
 }
