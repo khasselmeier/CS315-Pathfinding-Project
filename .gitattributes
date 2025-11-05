@@ -1,2 +1,19 @@
-# Auto detect text files and perform LF normalization
+# Ignore engine-generated folders
+[Ll]ibrary/* linguist-vendored
+[Pp]ackages/* linguist-vendored
+[Tt]emp/* linguist-vendored
+[Oo]bj/* linguist-vendored
+[Bb]uilds/* linguist-vendored
+
+# Count C# normally
 *.cs linguist-vendored=false
+
+# Ignore meta/shader/config stuff for language stats
+*.shader linguist-vendored
+*.cginc linguist-vendored
+*.hlsl linguist-vendored
+*.json linguist-vendored
+*.yaml linguist-vendored
+*.asset linguist-vendored
+*.mat linguist-vendored
+*.prefab linguist-vendored
