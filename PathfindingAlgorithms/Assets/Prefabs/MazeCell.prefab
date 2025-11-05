@@ -76,9 +76,9 @@ GameObject:
   - component: {fileID: 3461494169214531089}
   - component: {fileID: 3450767084624547738}
   - component: {fileID: 1461687865464055672}
-  m_Layer: 6
+  m_Layer: 3
   m_Name: FloorCell
-  m_TagString: MazeCell
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
