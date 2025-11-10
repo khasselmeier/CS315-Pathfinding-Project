@@ -6,10 +6,12 @@ public class DijkstraPathfinder : Kinematic
 {
     public Node start;
     public Node goal;
+    //public LayerMask obstacleMask;
 
     Graph myGraph;
     FollowPath myMoveType;
     LookWhereGoing myRotateType;
+    ObstacleAvoidance myAvoid;
     GameObject[] myPath;
 
     void Start()
@@ -36,13 +38,51 @@ public class DijkstraPathfinder : Kinematic
         myMoveType = new FollowPath();
         myMoveType.character = this;
         myMoveType.path = myPath;
+
+        myAvoid = new ObstacleAvoidance();
+        myAvoid.character = this;      
+        myAvoid.target = myTarget;     
+        myAvoid.lookAhead = 5f;       
+        myAvoid.avoidDistance = 4f;     
     }
+
+    //public ObstacleAvoidance obstacleAvoidance;
 
     protected override void Update()
     {
+        //steeringUpdate = new SteeringOutput();
+        //steeringUpdate.angular = myRotateType.getSteering().angular;
+        //steeringUpdate.linear = myMoveType.getSteering().linear;
+        //base.Update();
+
+        /*steeringUpdate = new SteeringOutput();
+
+        // Get individual steering behaviors
+        SteeringOutput pathSteering = myMoveType.getSteering();
+        SteeringOutput avoidSteering = myAvoid.getSteering();
+        SteeringOutput rotateSteering = myRotateType.getSteering();
+
+        // Combine obstacle avoidance + path following
+        steeringUpdate.linear = pathSteering.linear + avoidSteering.linear;
+        steeringUpdate.angular = rotateSteering.angular;
+
+        base.Update();*/
+
         steeringUpdate = new SteeringOutput();
+
+        // Get the steering from each behavior
+        SteeringOutput pathSteering = myMoveType.getSteering();
+        SteeringOutput avoidSteering = myAvoid.getSteering();
+
+        // Blend them together (weighted)
+        float avoidWeight = 1.5f;  // stronger influence when avoiding
+        float pathWeight = 1.0f;   // keeps on path
+
+        steeringUpdate.linear =
+            (pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight).normalized;
+
         steeringUpdate.angular = myRotateType.getSteering().angular;
-        steeringUpdate.linear = myMoveType.getSteering().linear;
+
         base.Update();
     }
 }
