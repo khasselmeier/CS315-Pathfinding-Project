@@ -6,7 +6,6 @@ public class DijkstraPathfinder : Kinematic
 {
     public Node start;
     public Node goal;
-    //public LayerMask obstacleMask;
 
     Graph myGraph;
     FollowPath myMoveType;
@@ -46,8 +45,6 @@ public class DijkstraPathfinder : Kinematic
         myAvoid.avoidDistance = 4f;     
     }
 
-    //public ObstacleAvoidance obstacleAvoidance;
-
     protected override void Update()
     {
         //steeringUpdate = new SteeringOutput();
@@ -70,16 +67,14 @@ public class DijkstraPathfinder : Kinematic
 
         steeringUpdate = new SteeringOutput();
 
-        // Get the steering from each behavior
         SteeringOutput pathSteering = myMoveType.getSteering();
         SteeringOutput avoidSteering = myAvoid.getSteering();
 
         // Blend them together (weighted)
-        float avoidWeight = 1.5f;  // stronger influence when avoiding
-        float pathWeight = 1.0f;   // keeps on path
+        float avoidWeight = 1.5f; 
+        float pathWeight = 1.0f;   
 
-        steeringUpdate.linear =
-            (pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight).normalized;
+        steeringUpdate.linear = (pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight).normalized;
 
         steeringUpdate.angular = myRotateType.getSteering().angular;
 
