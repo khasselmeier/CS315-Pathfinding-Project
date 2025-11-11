@@ -5,46 +5,81 @@ using UnityEngine;
 public class ObstacleAvoidance : Seek
 {
     public float avoidDistance = 4f;
-    public float lookAhead = 5f;
-    public LayerMask obstacleMask = 3;
+    public float lookAhead = 20f;
+    public LayerMask obstacleMask;
+    public int rayCount = 40;
+    public float raySpread = 360f;
 
     protected override Vector3 getTargetPosition()
     {
-        /*RaycastHit hit;
+        Vector3 direction = character.linearVelocity.sqrMagnitude > 0.01f ? character.linearVelocity.normalized : (target != null ? (target.transform.position - character.transform.position).normalized : character.transform.forward);
 
-        if (Physics.Raycast(character.transform.position, character.linearVelocity, out hit, lookAhead))
+        Vector3 start = character.transform.position + Vector3.up * 0.5f; // small offset upward
+        RaycastHit closestHit;
+        bool hitSomething = false;
+        float closestDistance = float.MaxValue;
+        Vector3 bestAvoidTarget = Vector3.zero;
+
+        Vector3 horizontalDir = new Vector3(direction.x, 0f, direction.z).normalized;
+
+        // Sending out raycasts in a circle
+        for (int i = 0; i < rayCount; i++)
         {
-            Debug.DrawRay(character.transform.position, character.linearVelocity.normalized * hit.distance, Color.red, 0.5f);
-            return hit.point + (hit.normal * avoidDistance);
+            // Evenly distribute rays across the spread
+            float angle = -raySpread * 0.5f + (raySpread / (rayCount - 1)) * i;
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * horizontalDir;
+
+            RaycastHit hit;
+            if (Physics.Raycast(start, dir, out hit, lookAhead, obstacleMask, QueryTriggerInteraction.Ignore))
+            {
+                // Ignore ground hits
+                if (Vector3.Dot(hit.normal, Vector3.up) > 0.6f)
+                    continue;
+
+                Debug.DrawLine(start, hit.point, Color.red);
+
+                if (hit.distance < closestDistance)
+                {
+                    hitSomething = true;
+                    closestHit = hit;
+                    closestDistance = hit.distance;
+                    Vector3 horizontalNormal = new Vector3(hit.normal.x, 0f, hit.normal.z).normalized;
+                    bestAvoidTarget = hit.point + horizontalNormal * Mathf.Max(avoidDistance, 0.5f);
+                    bestAvoidTarget.y = character.transform.position.y; // Y-axis fixed
+                }
+            }
+            else
+            {
+                Debug.DrawRay(start, dir * lookAhead, Color.green);
+            }
         }
 
-        else
+        if (hitSomething)
         {
-            Debug.DrawRay(character.transform.position, character.linearVelocity.normalized * hit.distance, Color.green, 0.5f);
-            return base.getTargetPosition();
-        }*/
-
-        Vector3 velocity = character.linearVelocity;
-        if (velocity.sqrMagnitude < 0.001f)
-            return base.getTargetPosition();
-
-        Vector3 direction = velocity.normalized;
-        RaycastHit hit;
-
-        // Cast ray forward using normalized velocity
-        if (Physics.Raycast(character.transform.position, direction, out hit, lookAhead, obstacleMask))
-        {
-            // Ignore ground hits (anything mostly horizontal)
-            if (Vector3.Dot(hit.normal, Vector3.up) > 0.7f)
-                return base.getTargetPosition();
-
-            Debug.DrawRay(character.transform.position, direction * hit.distance, Color.red, 0.1f);
-            return hit.point + (hit.normal * avoidDistance);
+            return bestAvoidTarget;
         }
-        else
+
+        // No obstacle detected -> follow the base Seek target
+        return base.getTargetPosition();
+    }
+
+    // Visual debugging
+    void OnDrawGizmos()
+    {
+        if (character == null) return;
+
+        Vector3 start = character.transform.position + Vector3.up * 0.5f;
+        Vector3 forward = character.transform.forward;
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(start, start + forward * lookAhead);
+
+        // Optional: draw the ray spread
+        for (int i = 0; i < rayCount; i++)
         {
-            Debug.DrawRay(character.transform.position, direction * lookAhead, Color.green, 0.1f);
-            return base.getTargetPosition();
+            float angle = -raySpread * 0.5f + (raySpread / (rayCount - 1)) * i;
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
+            Gizmos.DrawLine(start, start + dir * lookAhead);
         }
     }
 }

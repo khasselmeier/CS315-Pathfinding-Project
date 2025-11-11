@@ -4,22 +4,27 @@ using UnityEngine;
 
 public class DijkstraPathfinder : Kinematic
 {
-    public Node start;
-    public Node goal;
+    public Node start; //Start point
+    public Node goal; //End point
+
+    public LayerMask obstacleMask;
 
     Graph myGraph;
     FollowPath myMoveType;
     LookWhereGoing myRotateType;
     ObstacleAvoidance myAvoid;
+    Arrive myArrive;
     GameObject[] myPath;
 
     void Start()
     {
+        // Rotation
         myRotateType = new LookWhereGoing();
         myRotateType.character = this;
-        myRotateType.target = myTarget;
+        myRotateType.target = myTarget; //"Facing" target
 
-        Graph myGraph = new Graph();
+        // Pathfinding
+        myGraph = new Graph();
         myGraph.Build();
         List<Connection> path = Dijkstra.pathfind(myGraph, start, goal);
         myPath = new GameObject[path.Count + 1];
@@ -34,50 +39,59 @@ public class DijkstraPathfinder : Kinematic
 
         myPath[i] = goal.gameObject;
 
+        // Follow
         myMoveType = new FollowPath();
         myMoveType.character = this;
         myMoveType.path = myPath;
 
+        // Avoid
         myAvoid = new ObstacleAvoidance();
-        myAvoid.character = this;      
-        myAvoid.target = myTarget;     
-        myAvoid.lookAhead = 5f;       
-        myAvoid.avoidDistance = 4f;     
+        myAvoid.character = this;
+        myAvoid.obstacleMask = obstacleMask;
+        myAvoid.lookAhead = 4f; 
+        myAvoid.avoidDistance = 4f;
+
+        // Arrive
+        myArrive = new Arrive();
+        myArrive.character = this;
+        myArrive.target = goal.gameObject;
     }
 
     protected override void Update()
     {
-        //steeringUpdate = new SteeringOutput();
-        //steeringUpdate.angular = myRotateType.getSteering().angular;
-        //steeringUpdate.linear = myMoveType.getSteering().linear;
-        //base.Update();
-
-        /*steeringUpdate = new SteeringOutput();
-
-        // Get individual steering behaviors
-        SteeringOutput pathSteering = myMoveType.getSteering();
-        SteeringOutput avoidSteering = myAvoid.getSteering();
-        SteeringOutput rotateSteering = myRotateType.getSteering();
-
-        // Combine obstacle avoidance + path following
-        steeringUpdate.linear = pathSteering.linear + avoidSteering.linear;
-        steeringUpdate.angular = rotateSteering.angular;
-
-        base.Update();*/
-
         steeringUpdate = new SteeringOutput();
 
-        SteeringOutput pathSteering = myMoveType.getSteering();
-        SteeringOutput avoidSteering = myAvoid.getSteering();
+        // Get current waypoint
+        GameObject currentWaypoint = myMoveType.GetCurrentWaypoint();
+        myAvoid.target = currentWaypoint;
 
-        // Blend them together (weighted)
-        float avoidWeight = 1.5f; 
-        float pathWeight = 1.0f;   
+        // Check for final goal
+        bool atGoal = currentWaypoint == goal.gameObject &&
+                      Vector3.Distance(transform.position, goal.transform.position) < 1.5f;
 
-        steeringUpdate.linear = (pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight).normalized;
+        if (atGoal)
+        {
+            // Stop moving
+            steeringUpdate = myArrive.getSteering();
+        }
+        else
+        {
+            // Keep moving
+            SteeringOutput pathSteering = myMoveType.getSteering();
+            SteeringOutput avoidSteering = myAvoid.getSteering();
 
-        steeringUpdate.angular = myRotateType.getSteering().angular;
+            bool isAvoiding = avoidSteering.linear.sqrMagnitude > 0.01f;
 
+            float avoidWeight = isAvoiding ? 1.5f : 0f;
+            float pathWeight = 1.0f;
+
+            // Weight and normalize steering behaviors
+            Vector3 combined = pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight;
+            float maxAccel = 5f;
+            steeringUpdate.linear = Vector3.ClampMagnitude(combined, maxAccel);
+
+            steeringUpdate.angular = myRotateType.getSteering().angular;
+        }
         base.Update();
     }
 }

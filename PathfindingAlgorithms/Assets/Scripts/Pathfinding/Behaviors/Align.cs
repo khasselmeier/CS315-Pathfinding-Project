@@ -7,14 +7,14 @@ public class Align : SteeringBehavior
     public Kinematic character;
     public GameObject target;
 
-    float maxAngularAcceleration = 100f; // 5
-    float maxRotation = 45f; // maxAngularVelocity
+    float maxAngularAcceleration = 1080f; // 5 (original comment) : degrees/second^2
+    float maxRotation = 720f; // maxAngularVelocity : degrees/second
 
     // the radius for arriving at the target
-    //float targetRadius = 1f;
+    float targetRadius = 1f; // Considered aligned within this many degrees of target
 
     // the radius for beginning to slow down
-    float slowRadius = 10f;
+    float slowRadius = 45f; // Begin slowing the turn this many degrees from facing target
 
     // the time over which to achieve target speed
     float timeToTarget = 0.1f;
@@ -35,12 +35,6 @@ public class Align : SteeringBehavior
         //float rotation = Mathf.DeltaAngle(character.transform.eulerAngles.y, target.transform.eulerAngles.y);
         float rotation = Mathf.DeltaAngle(character.transform.eulerAngles.y, getTargetAngle());
         float rotationSize = Mathf.Abs(rotation);
-
-        // check if we are there, return no steering
-        //if (rotationSize < targetRadius)
-        //{
-        //    return null;
-        //}
 
         // if we are outside the slow radius, then use maximum rotation
         float targetRotation = 0.0f;

@@ -8,37 +8,32 @@ public class FollowPath : Seek
     private int currentPathIndex;
     public float targetRadius = 0.5f;
 
+    public GameObject GetCurrentWaypoint()
+    {
+        if (path == null || path.Length == 0)
+            return null;
+
+        return path[currentPathIndex];
+    }
+
     public override SteeringOutput getSteering()
     {
-        if (target == null)
-        {
-            int nearestPathIndex = 0;
-            float distanceToNearest = float.PositiveInfinity;
-            for (int i = 0; i < path.Length; i++)
-            {
-                GameObject candidate = path[i];
-                Vector3 vectorToCandidate = candidate.transform.position - character.transform.position;
-                float distanceToCandidate = vectorToCandidate.magnitude;
-                if (distanceToCandidate > distanceToNearest)
-                {
-                    nearestPathIndex = i;
-                    distanceToNearest = distanceToCandidate;
-                }
-            }
-            target = path[nearestPathIndex];
-        }
+        if (path == null || path.Length == 0)
+            return new SteeringOutput();
 
+        // Assign target to current waypoint
+        target = path[currentPathIndex];
+
+        // Check if reached current waypoint
         float distanceToTarget = (target.transform.position - character.transform.position).magnitude;
         if (distanceToTarget < targetRadius)
         {
             currentPathIndex++;
-            if (currentPathIndex > path.Length - 1)
+            if (currentPathIndex >= path.Length)
             {
-                currentPathIndex = 0;
+                currentPathIndex = path.Length - 1; // stop at final node
             }
-            target = path[currentPathIndex];
         }
-
         return base.getSteering();
     }
 }
