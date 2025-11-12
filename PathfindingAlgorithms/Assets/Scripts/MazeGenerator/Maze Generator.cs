@@ -66,6 +66,8 @@ public class MazeGenerator : MonoBehaviour
                 GenerateMaze(currentCell, nextCell);
             }
         } while (nextCell != null); //stop when there are no unvisited neighbors left
+
+        GetComponent<NodeGenerator>()?.GenerateNodes();
     }
 
     //returns a random unvisited neighbor of the current cell

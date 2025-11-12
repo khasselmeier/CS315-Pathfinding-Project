@@ -1,97 +1,83 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DijkstraPathfinder : Kinematic
+public class DijkstraPathfinder : MonoBehaviour
 {
-    public Node start; //Start point
-    public Node goal; //End point
+    [Header("Pathfinding Settings")]
+    public Node StartNode;  //these are assigned automatically by the PathfindingSpawner script
+    public Node EndNode;
 
-    public LayerMask obstacleMask;
+    private List<Node> path = new List<Node>();
 
-    Graph myGraph;
-    FollowPath myMoveType;
-    LookWhereGoing myRotateType;
-    ObstacleAvoidance myAvoid;
-    Arrive myArrive;
-    GameObject[] myPath;
-
-    void Start()
+    public void FindPath()
     {
-        // Rotation
-        myRotateType = new LookWhereGoing();
-        myRotateType.character = this;
-        myRotateType.target = myTarget; //"Facing" target
-
-        // Pathfinding
-        myGraph = new Graph();
-        myGraph.Build();
-        List<Connection> path = Dijkstra.pathfind(myGraph, start, goal);
-        myPath = new GameObject[path.Count + 1];
-
-        int i = 0;
-
-        foreach (Connection c in path)
+        if (StartNode == null || EndNode == null)
         {
-            myPath[i] = c.getFromNode().gameObject;
-            i++;
+            Debug.LogWarning("StartNode or EndNode not assigned");
+            return;
         }
 
-        myPath[i] = goal.gameObject;
+        //dijkstra’s algorithm
+        Dictionary<Node, float> distances = new Dictionary<Node, float>();
+        Dictionary<Node, Node> previous = new Dictionary<Node, Node>();
+        List<Node> unvisited = new List<Node>(FindObjectsOfType<Node>());
 
-        // Follow
-        myMoveType = new FollowPath();
-        myMoveType.character = this;
-        myMoveType.path = myPath;
+        //initialize distances
+        foreach (Node node in unvisited)
+            distances[node] = Mathf.Infinity;
 
-        // Avoid
-        myAvoid = new ObstacleAvoidance();
-        myAvoid.character = this;
-        myAvoid.obstacleMask = obstacleMask;
-        myAvoid.lookAhead = 4f; 
-        myAvoid.avoidDistance = 4f;
+        distances[StartNode] = 0f;
 
-        // Arrive
-        myArrive = new Arrive();
-        myArrive.character = this;
-        myArrive.target = goal.gameObject;
-    }
-
-    protected override void Update()
-    {
-        steeringUpdate = new SteeringOutput();
-
-        // Get current waypoint
-        GameObject currentWaypoint = myMoveType.GetCurrentWaypoint();
-        myAvoid.target = currentWaypoint;
-
-        // Check for final goal
-        bool atGoal = currentWaypoint == goal.gameObject &&
-                      Vector3.Distance(transform.position, goal.transform.position) < 1.5f;
-
-        if (atGoal)
+        while (unvisited.Count > 0)
         {
-            // Stop moving
-            steeringUpdate = myArrive.getSteering();
+            //find node with smallest distance
+            Node current = null;
+            float minDist = Mathf.Infinity;
+
+            foreach (Node node in unvisited)
+            {
+                if (distances[node] < minDist)
+                {
+                    minDist = distances[node];
+                    current = node;
+                }
+            }
+
+            if (current == null)
+                break;
+
+            //if we reached the end node, stop
+            if (current == EndNode)
+                break;
+
+            unvisited.Remove(current);
+
+            //evaluate neighbors
+            foreach (Node neighbor in current.ConnectsTo)
+            {
+                if (neighbor == null || !unvisited.Contains(neighbor)) continue;
+
+                float newDist = distances[current] + Vector3.Distance(current.transform.position, neighbor.transform.position);
+                if (newDist < distances[neighbor])
+                {
+                    distances[neighbor] = newDist;
+                    previous[neighbor] = current;
+                }
+            }
         }
-        else
+
+        //reconstruct path
+        path.Clear();
+        Node step = EndNode;
+        while (step != null && previous.ContainsKey(step))
         {
-            // Keep moving
-            SteeringOutput pathSteering = myMoveType.getSteering();
-            SteeringOutput avoidSteering = myAvoid.getSteering();
-
-            bool isAvoiding = avoidSteering.linear.sqrMagnitude > 0.01f;
-
-            float avoidWeight = isAvoiding ? 1.5f : 0f;
-            float pathWeight = 1.0f;
-
-            // Weight and normalize steering behaviors
-            Vector3 combined = pathSteering.linear * pathWeight + avoidSteering.linear * avoidWeight;
-            float maxAccel = 5f;
-            steeringUpdate.linear = Vector3.ClampMagnitude(combined, maxAccel);
-
-            steeringUpdate.angular = myRotateType.getSteering().angular;
+            path.Insert(0, step);
+            step = previous.ContainsKey(step) ? previous[step] : null;
         }
-        base.Update();
+
+        if (!path.Contains(StartNode))
+            path.Insert(0, StartNode);
+
+        Debug.Log($"Dijkstra Path found with {path.Count} nodes");
     }
 }

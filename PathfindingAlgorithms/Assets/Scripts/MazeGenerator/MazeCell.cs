@@ -57,4 +57,9 @@ public class MazeCell : MonoBehaviour
     {
         _backWall.SetActive(false);
     }
+
+    public GameObject GetLeftWall() => _leftWall;
+    public GameObject GetRightWall() => _rightWall;
+    public GameObject GetFrontWall() => _frontWall;
+    public GameObject GetBackWall() => _backWall;
 }

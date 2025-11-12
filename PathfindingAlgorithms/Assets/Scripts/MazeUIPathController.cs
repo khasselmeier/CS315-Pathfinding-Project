@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class MazeUIPathController : MonoBehaviour
 {
-    [Header("UI References")]
+    [Header("UI Settings")]
     [SerializeField] private Button generateMazeButton;
     [SerializeField] private Button setStartButton;
     [SerializeField] private Button setEndButton;
@@ -80,14 +80,15 @@ public class MazeUIPathController : MonoBehaviour
 
     void LateUpdate()
     {
-        // Resets click flag each frame so other scripts can read fresh input next frame
+        //resets click flag each frame so other scripts can read fresh input next frame
         ClickHandledByUI = false;
     }
+
 
     // -------------------- Maze Generation --------------------
     private void GenerateNewMaze()
     {
-        //remove any previously generated maze before creating a new one (so mazes don't overlap)
+        //remove any previously generated maze before creating a new one
         ClearOldMaze();
 
         //instantiate new maze from prefab
@@ -95,23 +96,53 @@ public class MazeUIPathController : MonoBehaviour
         {
             GameObject instance = Instantiate(mazeGeneratorPrefab.gameObject, Vector3.zero, Quaternion.identity, mazeParent);
 
-            //reset transform to keep maze aligned correctly (0,0,0)
+            //reset transform so maze stays aligned correctly
             instance.transform.localPosition = Vector3.zero;
             instance.transform.localRotation = Quaternion.identity;
             instance.transform.localScale = Vector3.one;
 
-            //find MazeGenerator component in the instance
+            //find MazeGenerator component
             currentMaze = instance.GetComponentInChildren<MazeGenerator>();
-            Debug.Log("New maze generated successfully");
+
+            //wait for maze to finish generating before creating nodes
+            StartCoroutine(GenerateNodesAfterMazeBuild());
         }
         else
         {
-            Debug.LogWarning("mazeGeneratorPrefab is not assigned");
+            Debug.LogWarning("mazeGeneratorPrefab is not assigned in MazeUIPathController");
         }
 
         //reset UI state after generation
         ClearSelection();
         selectedText.text = "Selected: None";
+    }
+
+    private System.Collections.IEnumerator GenerateNodesAfterMazeBuild()
+    {
+        //wait one frame to allow all MazeCells to be instantiated
+        yield return null;
+
+        //find all MazeCells under mazeParent
+        MazeCell[] cells = mazeParent.GetComponentsInChildren<MazeCell>();
+
+        if (cells.Length == 0)
+        {
+            Debug.LogWarning("No MazeCells found after maze generation – nodes cannot be generated");
+            yield break;
+        }
+
+        Debug.Log($"Maze generation complete. Found {cells.Length} MazeCells under {mazeParent.name}");
+
+        NodeGenerator nodeGen = FindObjectOfType<NodeGenerator>();
+        if (nodeGen != null)
+        {
+            nodeGen.mazeParent = mazeParent; // assign parent
+            nodeGen.GenerateNodes();
+        }
+        else
+        {
+            Debug.LogWarning("No NodeGenerator found in scene");
+        }
     }
 
     private void ClearOldMaze()
@@ -130,6 +161,7 @@ public class MazeUIPathController : MonoBehaviour
             currentMaze = null;
         }
     }
+
 
     // -------------------- Selection Logic --------------------
     private void HandleSelection()
@@ -160,12 +192,12 @@ public class MazeUIPathController : MonoBehaviour
             }
         }
 
-        //right-click -> delete wall/floor
+        //right-click -> delete cell
         if (Input.GetMouseButtonDown(1) && selectedObject != null && selectedObject.CompareTag("Wall"))
         {
             ClickHandledByUI = true;
-            Destroy(selectedObject);        //permanently removes wall from scene
-            ClearSelection();               //reset selection highlight
+            Destroy(selectedObject); //permanently removes object from scene
+            ClearSelection(); //reset selection highlight
             selectedText.text = "Deleted wall";
         }
     }
@@ -210,6 +242,8 @@ public class MazeUIPathController : MonoBehaviour
         selectedObject = null;
         selectedRenderer = null;
     }
+
+
 
     // -------------------- Start / End Confirmation --------------------
     private void ConfirmStartPoint()
@@ -266,7 +300,7 @@ public class MazeUIPathController : MonoBehaviour
             renderer.material.color = original;
     }
 
-    // -------------------- Getters --------------------
-    public GameObject GetStartPoint() => startObject; //accessor for pathfinding scripts
-    public GameObject GetEndPoint() => endObject;     //accessor for pathfinding scripts
+    // -------------------- Pubilic Getters (for other scripts) --------------------
+    public GameObject StartPointObject => startObject;
+    public GameObject EndPointObject => endObject;
 }
