@@ -7,9 +7,10 @@ public class NodeGenerator : MonoBehaviour
     public Transform mazeParent;
     [SerializeField] private GameObject nodePrefab;
     [SerializeField] private float nodeYOffset = 0.2f;
-    [SerializeField] private float cellSpacing = 2f; // distance between adjacent cells
+    [SerializeField] private float cellSpacing = 1f; //distance between adjacent cells
 
     private List<Node> generatedNodes = new List<Node>();
+    public static Dictionary<GameObject, Node> CellToNodeMap = new Dictionary<GameObject, Node>();
 
     public void GenerateNodes()
     {
@@ -20,13 +21,13 @@ public class NodeGenerator : MonoBehaviour
 
         if (cells.Length == 0)
         {
-            Debug.LogWarning("No MazeCells found — nodes cannot be generated.");
+            Debug.LogWarning("No MazeCells found — nodes cannot be generated");
             return;
         }
 
         Dictionary<MazeCell, Node> cellNodeMap = new Dictionary<MazeCell, Node>();
 
-        //step 1: create nodes
+        //step 1: create a node for each maze cell
         foreach (MazeCell cell in cells)
         {
             Vector3 nodePos = cell.transform.position + Vector3.up * nodeYOffset;
@@ -42,33 +43,50 @@ public class NodeGenerator : MonoBehaviour
 
             cellNodeMap[cell] = node;
             generatedNodes.Add(node);
-            Debug.Log($"Created Node at {nodePos} for cell {cell.name}");
         }
 
-        //step 2: connect nodes based on adjacency
+        //step 2: connect nodes based on open walls
         foreach (MazeCell cell in cells)
         {
             Node node = cellNodeMap[cell];
             List<Node> connections = new List<Node>();
 
-            foreach (MazeCell neighbor in cells)
-            {
-                if (neighbor == cell) continue;
+            //find potential neighbors based on position offsets
+            Vector3 pos = cell.transform.position;
 
-                float dist = Vector3.Distance(cell.transform.position, neighbor.transform.position);
+            MazeCell rightNeighbor = FindCellAtPosition(cells, pos + Vector3.right * cellSpacing);
+            MazeCell leftNeighbor = FindCellAtPosition(cells, pos + Vector3.left * cellSpacing);
+            MazeCell frontNeighbor = FindCellAtPosition(cells, pos + Vector3.forward * cellSpacing);
+            MazeCell backNeighbor = FindCellAtPosition(cells, pos + Vector3.back * cellSpacing);
 
-                //connect nodes that are close enough
-                if (dist > 0f && dist <= cellSpacing + 0.1f) // 0.1 buffer for floating point
-                {
-                    connections.Add(cellNodeMap[neighbor]);
-                }
-            }
+            //connect only if there's no wall in between
+            if (rightNeighbor != null && !cell.GetRightWall().activeSelf && !rightNeighbor.GetLeftWall().activeSelf)
+                connections.Add(cellNodeMap[rightNeighbor]);
+
+            if (leftNeighbor != null && !cell.GetLeftWall().activeSelf && !leftNeighbor.GetRightWall().activeSelf)
+                connections.Add(cellNodeMap[leftNeighbor]);
+
+            if (frontNeighbor != null && !cell.GetFrontWall().activeSelf && !frontNeighbor.GetBackWall().activeSelf)
+                connections.Add(cellNodeMap[frontNeighbor]);
+
+            if (backNeighbor != null && !cell.GetBackWall().activeSelf && !backNeighbor.GetFrontWall().activeSelf)
+                connections.Add(cellNodeMap[backNeighbor]);
 
             node.ConnectsTo = connections.ToArray();
             Debug.Log($"{node.name} connected to {connections.Count} nodes");
         }
 
-        Debug.Log($"Generated {generatedNodes.Count} total nodes.");
+        Debug.Log($"Generated {generatedNodes.Count} total nodes and established connections");
+    }
+
+    private MazeCell FindCellAtPosition(MazeCell[] cells, Vector3 targetPos)
+    {
+        foreach (MazeCell cell in cells)
+        {
+            if (Vector3.Distance(cell.transform.position, targetPos) < 0.1f)
+                return cell;
+        }
+        return null;
     }
 
     private void ClearExistingNodes()

@@ -43,11 +43,14 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // Start generating the maze recursively from the top-left cell (0, 0)
+        //start generating the maze recursively from the top-left cell (0, 0)
         GenerateMaze(null, _mazeGrid[0, 0]);
+
+        //now that the maze is fully built, generate nodes once
+        GetComponent<NodeGenerator>()?.GenerateNodes();
     }
 
-    //recursively generates a maze using depth-first search (DFS)
+    //recursively generates a maze using depth-first search
     private void GenerateMaze(MazeCell previousCell, MazeCell currentCell)
     {
         currentCell.Visit();                      //mark current cell as visited
@@ -66,8 +69,6 @@ public class MazeGenerator : MonoBehaviour
                 GenerateMaze(currentCell, nextCell);
             }
         } while (nextCell != null); //stop when there are no unvisited neighbors left
-
-        GetComponent<NodeGenerator>()?.GenerateNodes();
     }
 
     //returns a random unvisited neighbor of the current cell
@@ -126,7 +127,6 @@ public class MazeGenerator : MonoBehaviour
             return; //no walls to remove for the first cell
 
         //compare positions to determine movement direction and remove appropriate walls
-
         //moving right
         if (previousCell.transform.position.x < currentCell.transform.position.x)
         {

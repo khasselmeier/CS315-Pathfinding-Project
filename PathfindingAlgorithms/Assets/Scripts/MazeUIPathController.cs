@@ -38,7 +38,7 @@ public class MazeUIPathController : MonoBehaviour
     private readonly Color endColor = Color.red;
     private readonly Color selectedColor = Color.yellow;
 
-    //stores the original colors of maze cells to restore later (walls are pink, floor is gray)
+    //stores the original colors of maze cells to restore later
     private readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
 
     //so multiple scripts don't interfere with the same click event in a single frame
@@ -119,31 +119,26 @@ public class MazeUIPathController : MonoBehaviour
 
     private System.Collections.IEnumerator GenerateNodesAfterMazeBuild()
     {
-        //wait one frame to allow all MazeCells to be instantiated
-        yield return null;
+        //wait one frame to ensure MazeCells are instantiated
+        yield return new WaitForSeconds(0.1f);
 
-        //find all MazeCells under mazeParent
-        MazeCell[] cells = mazeParent.GetComponentsInChildren<MazeCell>();
-
-        if (cells.Length == 0)
+        NodeGenerator nodeGen = FindObjectOfType<NodeGenerator>();
+        if (nodeGen == null)
         {
-            Debug.LogWarning("No MazeCells found after maze generation – nodes cannot be generated");
+            Debug.LogError("[MazeUIPathController] No NodeGenerator found in scene");
             yield break;
         }
 
-        Debug.Log($"Maze generation complete. Found {cells.Length} MazeCells under {mazeParent.name}");
+        if (mazeParent == null)
+        {
+            Debug.LogError("[MazeUIPathController] MazeParent not assigned");
+            yield break;
+        }
 
-        NodeGenerator nodeGen = FindObjectOfType<NodeGenerator>();
-        if (nodeGen != null)
-        {
-            nodeGen.mazeParent = mazeParent; // assign parent
-            nodeGen.GenerateNodes();
-        }
-        else
-        {
-            Debug.LogWarning("No NodeGenerator found in scene");
-        }
+        nodeGen.mazeParent = mazeParent;
+        nodeGen.GenerateNodes();
     }
+
 
     private void ClearOldMaze()
     {
@@ -295,7 +290,7 @@ public class MazeUIPathController : MonoBehaviour
         if (obj == null || renderer == null)
             return;
 
-        //restore original color (pinkish for walls, gray for floor)
+        //restore original color
         if (originalColors.TryGetValue(obj, out Color original))
             renderer.material.color = original;
     }

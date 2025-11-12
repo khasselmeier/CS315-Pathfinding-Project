@@ -1,63 +1,69 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PathfindingSpawner : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GameObject pathfinderPrefab;
-    [SerializeField] private MazeUIPathController uiController; //reference to UI script
+    [SerializeField] private MazeUIPathController uiController;
+    [SerializeField] private NodeGenerator nodeGenerator;
 
-    private GameObject currentPathfinder;
+    private GameObject activePathfinder;
 
     public void SpawnPathfinder()
     {
-        //get the current start/end GameObjects from the UI controller
-        GameObject startObj = uiController.StartPointObject;
-        GameObject endObj = uiController.EndPointObject;
-
-        if (startObj == null || endObj == null)
+        //make sure there are start and end points
+        if (uiController.StartPointObject == null || uiController.EndPointObject == null)
         {
-            //Debug.LogWarning("Start or End point not set");
+            Debug.LogWarning("[PathfindingSpawner] Start or End points not set");
             return;
         }
 
-        //get Node components or find nearest nodes
-        Node startNode = startObj.GetComponent<Node>();
-        Node endNode = endObj.GetComponent<Node>();
+        StartCoroutine(SpawnAfterNodes());
+    }
 
-        if (startNode == null) startNode = FindClosestNode(startObj.transform.position);
-        if (endNode == null) endNode = FindClosestNode(endObj.transform.position);
+    private IEnumerator SpawnAfterNodes()
+    {
+        yield return new WaitForSeconds(0.1f); //small delay to ensure nodes are ready
+
+        Node[] nodes = FindObjectsOfType<Node>();
+        if (nodes.Length == 0)
+        {
+            Debug.LogWarning("[PathfindingSpawner] No nodes found in scene");
+            yield break;
+        }
+
+        //find closest nodes to start/end objects
+        Node startNode = FindClosestNode(uiController.StartPointObject.transform.position, nodes);
+        Node endNode = FindClosestNode(uiController.EndPointObject.transform.position, nodes);
 
         if (startNode == null || endNode == null)
         {
-            Debug.LogWarning("Start or End objects do not contain Node components and no nearby nodes were found");
-            return;
+            Debug.LogWarning("[PathfindingSpawner] Could not find valid Start or End node");
+            yield break;
         }
 
-        //remove old pathfinder if one exists
-        if (currentPathfinder != null)
-            Destroy(currentPathfinder);
-
-        //spawn new pathfinder
-        currentPathfinder = Instantiate(pathfinderPrefab, startNode.transform.position, Quaternion.identity);
-
-        //get the DijkstraPathfinder (even if it’s on a child)
-        DijkstraPathfinder pathfinder = currentPathfinder.GetComponentInChildren<DijkstraPathfinder>();
+        //spawn pathfinder at start node
+        activePathfinder = Instantiate(pathfinderPrefab, startNode.transform.position, Quaternion.identity);
+        DijkstraPathfinder pathfinder = activePathfinder.GetComponentInChildren<DijkstraPathfinder>();
         if (pathfinder == null)
         {
-            Debug.LogError("Pathfinder Prefab does not have a DijkstraPathfinder component script");
-            return;
+            Debug.LogError("[PathfindingSpawner] Pathfinder prefab does not contain a DijkstraPathfinder component");
+            yield break;
         }
 
-        //set start/end nodes and run the algorithm
         pathfinder.StartNode = startNode;
         pathfinder.EndNode = endNode;
+
+        //Debug.Log($"[PathfindingSpawner] Pathfinder spawned at {startNode.name} heading to {endNode.name}");
+
+        //run Dijkstra
         pathfinder.FindPath();
     }
 
-    //finds the nearest Node if the object isn't one itself
-    private Node FindClosestNode(Vector3 position)
+    private Node FindClosestNode(Vector3 position, Node[] allNodes)
     {
-        Node[] allNodes = FindObjectsOfType<Node>();
         Node closest = null;
         float minDist = Mathf.Infinity;
 
@@ -70,7 +76,6 @@ public class PathfindingSpawner : MonoBehaviour
                 closest = node;
             }
         }
-
         return closest;
     }
 }

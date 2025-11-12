@@ -3,8 +3,8 @@ using UnityEngine;
 public class MazeCell : MonoBehaviour
 {
     //-----Wall References-----
-    //each wall is a child GameObject that visually represents one side of the cell
-    //these will be toggled on/off as the maze is generated
+        //each wall is a child GameObject that visually represents one side of the cell
+        //these will be toggled on/off as the maze is generated
 
     [SerializeField]
     private GameObject _leftWall;
@@ -18,7 +18,7 @@ public class MazeCell : MonoBehaviour
     [SerializeField]
     private GameObject _backWall;
 
-    //this block covers the cell before it’s visited — often used for debugging or visualizing progress
+    //this block covers the cell before it’s visited — used for debugging or visualizing progress
     [SerializeField]
     private GameObject _unvisitedBlock;
 
