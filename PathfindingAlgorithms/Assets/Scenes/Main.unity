@@ -153,8 +153,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 136.65, y: -95.107}
-  m_SizeDelta: {x: 200, y: 34.0947}
+  m_AnchoredPosition: {x: 137.55951, y: -96.69884}
+  m_SizeDelta: {x: 260.943, y: 30.9104}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &160870950
 MonoBehaviour:
@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Note: You have to press GENERATE NEW MAZE in order for the nodes to connect'
+  m_text: 'Note: Press ''Generate New Maze'' to spawn and connect nodes'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1e6f0cb8bb22aab4f933eeac0be50900, type: 2}
   m_sharedMaterial: {fileID: -6119394266025930531, guid: 1e6f0cb8bb22aab4f933eeac0be50900, type: 2}
@@ -211,7 +211,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -619,13 +619,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40821788, y: 0.23456976, z: -0.10938167, w: 0.8754261}
+  m_LocalRotation: {x: 0.6830127, y: 0.18301274, z: -0.18301274, w: 0.6830127}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 50, y: 30, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 30, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -844,7 +844,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Pathfinding Algorithm
+  m_text: Dijkstra's Pathfinding Algorithm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1e6f0cb8bb22aab4f933eeac0be50900, type: 2}
   m_sharedMaterial: {fileID: -6119394266025930531, guid: 1e6f0cb8bb22aab4f933eeac0be50900, type: 2}
@@ -871,7 +871,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26.15
+  m_fontSize: 24.35
   m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 1
