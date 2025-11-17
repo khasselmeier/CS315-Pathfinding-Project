@@ -4,85 +4,94 @@ using UnityEngine;
 
 public class ObstacleAvoidance : Seek
 {
-    public float avoidDistance = 4f;
-    public float lookAhead = 5f;
+    [Header("Avoidance Settings")]
+    public float avoidDistance = 2f;
+    public float lookAhead = 1f;
     public LayerMask obstacleMask;
-    public int rayCount = 5;
-    public float raySpread = 45f;
+
+    [Header("Ray Settings")]
+    public int rayCount = 20;
+    public float raySpread = 60f;
 
     protected override Vector3 getTargetPosition()
     {
-        Vector3 direction = character.linearVelocity.sqrMagnitude > 0.01f ? character.linearVelocity.normalized : (target != null ? (target.transform.position - character.transform.position).normalized : character.transform.forward);
+        // Determine movement direction
+        Vector3 moveDir = character.linearVelocity.sqrMagnitude > 0.01f
+            ? character.linearVelocity.normalized
+            : (target != null ? (target.transform.position - character.transform.position).normalized
+                              : character.transform.forward);
 
-        Vector3 start = character.transform.position + Vector3.up * 0.5f; // small offset upward
-        RaycastHit closestHit;
+        Vector3 origin = character.transform.position + Vector3.up * 0.4f;
+
         bool hitSomething = false;
-        float closestDistance = float.MaxValue;
-        Vector3 bestAvoidTarget = Vector3.zero;
+        float closestDist = float.MaxValue;
+        RaycastHit closestHit = new RaycastHit();
 
-        Vector3 horizontalDir = new Vector3(direction.x, 0f, direction.z).normalized;
+        // Horizontal forward direction only
+        Vector3 forward = new Vector3(moveDir.x, 0, moveDir.z).normalized;
 
-        // Sending out raycasts in a circle
+        // Ray fan spread
         for (int i = 0; i < rayCount; i++)
         {
-            // Evenly distribute rays across the spread
             float angle = -raySpread * 0.5f + (raySpread / (rayCount - 1)) * i;
-            Vector3 dir = Quaternion.Euler(0, angle, 0) * horizontalDir;
+            Vector3 rayDir = Quaternion.Euler(0, angle, 0) * forward;
 
-            RaycastHit hit;
-            if (Physics.Raycast(start, dir, out hit, lookAhead, obstacleMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(origin, rayDir, out RaycastHit hit, lookAhead, obstacleMask, QueryTriggerInteraction.Ignore))
             {
-                // Ignore ground hits
-                if (Vector3.Dot(hit.normal, Vector3.up) > 0.6f)
-                    continue;
+                Debug.DrawLine(origin, hit.point, Color.red);
 
-                Debug.DrawLine(start, hit.point, Color.red);
-
-                if (hit.distance < closestDistance)
+                // record closest obstacle
+                if (hit.distance < closestDist)
                 {
-                    hitSomething = true;
+                    closestDist = hit.distance;
                     closestHit = hit;
-                    closestDistance = hit.distance;
-                    Debug.Log(hit.collider.gameObject.name + " was hit ");
-                    Vector3 horizontalNormal = new Vector3(hit.normal.x, 0f, hit.normal.z).normalized;
-                    bestAvoidTarget = hit.point + horizontalNormal * Mathf.Max(avoidDistance, 0.5f);
-                    bestAvoidTarget.y = character.transform.position.y; // Y-axis fixed
-
-                    
+                    hitSomething = true;
                 }
             }
             else
             {
-                Debug.DrawRay(start, dir * lookAhead, Color.green);
+                Debug.DrawRay(origin, rayDir * lookAhead, Color.green);
             }
         }
 
+        //  If an obstacle was hit -> compute avoidance
         if (hitSomething)
         {
-            return bestAvoidTarget;
+            Vector3 hitNormal = closestHit.normal;
+            hitNormal.y = 0;
+            hitNormal.Normalize();
+
+            // Compute slip direction (right or left) based on normal
+            Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+            float dot = Vector3.Dot(hitNormal, right);
+            Vector3 slip = (dot > 0 ? -right : right); // choose safe side
+
+            // slide along wall
+            Vector3 avoidTarget = closestHit.point + slip * avoidDistance;
+            avoidTarget.y = character.transform.position.y;
+
+            // If avoidTarget is too close, push some forward motion
+            Vector3 offset = avoidTarget - character.transform.position;
+            if (offset.magnitude < 0.5f)
+            {
+                avoidTarget = character.transform.position
+                              + (slip * avoidDistance * 0.7f)
+                              + (forward * avoidDistance * 0.6f);
+            }
+
+            return avoidTarget;
         }
 
-        // No obstacle detected -> follow the base Seek target
+        // No obstacle detected -> use default Seek
         return base.getTargetPosition();
     }
 
-    // Visual debugging
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (character == null) return;
 
-        Vector3 start = character.transform.position + Vector3.up * 0.5f;
-        Vector3 forward = character.transform.forward;
-
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(start, start + forward * lookAhead);
-
-        // Optional: draw the ray spread
-        for (int i = 0; i < rayCount; i++)
-        {
-            float angle = -raySpread * 0.5f + (raySpread / (rayCount - 1)) * i;
-            Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
-            Gizmos.DrawLine(start, start + dir * lookAhead);
-        }
+        Vector3 origin = character.transform.position + Vector3.up * 0.4f;
+        Gizmos.DrawLine(origin, origin + character.transform.forward * lookAhead);
     }
 }
