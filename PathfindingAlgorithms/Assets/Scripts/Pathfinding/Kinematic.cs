@@ -14,6 +14,11 @@ public class Kinematic : MonoBehaviour
 
     public GameObject myTarget;
 
+    public LayerMask collisionMask;
+
+    // small offset to avoid clipping into walls
+    private const float skinWidth = 0.05f;
+
     // child classes will get new steering data for use in our update function
     protected SteeringOutput steeringUpdate;
 
@@ -33,12 +38,41 @@ public class Kinematic : MonoBehaviour
             angularVelocity = 0.0f;
         }
 
-        // update my position and rotation - Millington p. 58, lines 7-9
-        this.transform.position += linearVelocity * Time.deltaTime;
+        Vector3 displacement = linearVelocity * Time.deltaTime;
+        Vector3 start = transform.position;
+        Vector3 end = start + displacement;
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (displacement.sqrMagnitude < 0.000001f)
+                break;
+
+            start = transform.position;
+            end = start + displacement;
+
+            if (Physics.Linecast(start, end, out RaycastHit hit, collisionMask, QueryTriggerInteraction.Ignore))
+            {
+                // Move to just outside the hit point
+                transform.position = hit.point + hit.normal * skinWidth;
+
+                // Remove velocity pushing into the obstacle
+                linearVelocity -= Vector3.Project(linearVelocity, hit.normal);
+
+                // Recompute remaining displacement with the updated velocity
+                displacement = linearVelocity * Time.deltaTime;
+            }
+            else
+            {
+                // No collision then apply movement normally
+                transform.position = end;
+                break;
+            }
+        }
+
         if (Mathf.Abs(angularVelocity) > 0.01f)
         {
             Vector3 v = new Vector3(0, angularVelocity, 0);
-            this.transform.eulerAngles += v * Time.deltaTime;
+            transform.eulerAngles += v * Time.deltaTime;
         }
 
         // update linear and angular velocities - I might be accelerating or decelerating, etc.
@@ -54,13 +88,12 @@ public class Kinematic : MonoBehaviour
         // note that Millington's pseudocode on p.58 does not clip angular velocity, but we do here
         if (linearVelocity.magnitude > maxSpeed)
         {
-            linearVelocity.Normalize();
-            linearVelocity *= maxSpeed;
+            linearVelocity = linearVelocity.normalized * maxSpeed;
         }
+
         if (Mathf.Abs(angularVelocity) > maxAngularVelocity)
         {
-            angularVelocity = maxAngularVelocity * (angularVelocity / Mathf.Abs(angularVelocity));
+            angularVelocity = maxAngularVelocity * Mathf.Sign(angularVelocity);
         }
     }
-
 }

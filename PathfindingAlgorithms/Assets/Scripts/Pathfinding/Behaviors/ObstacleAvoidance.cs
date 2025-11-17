@@ -5,10 +5,10 @@ using UnityEngine;
 public class ObstacleAvoidance : Seek
 {
     public float avoidDistance = 4f;
-    public float lookAhead = 20f;
+    public float lookAhead = 5f;
     public LayerMask obstacleMask;
-    public int rayCount = 40;
-    public float raySpread = 360f;
+    public int rayCount = 5;
+    public float raySpread = 45f;
 
     protected override Vector3 getTargetPosition()
     {
@@ -43,9 +43,12 @@ public class ObstacleAvoidance : Seek
                     hitSomething = true;
                     closestHit = hit;
                     closestDistance = hit.distance;
+                    Debug.Log(hit.collider.gameObject.name + " was hit ");
                     Vector3 horizontalNormal = new Vector3(hit.normal.x, 0f, hit.normal.z).normalized;
                     bestAvoidTarget = hit.point + horizontalNormal * Mathf.Max(avoidDistance, 0.5f);
                     bestAvoidTarget.y = character.transform.position.y; // Y-axis fixed
+
+                    
                 }
             }
             else

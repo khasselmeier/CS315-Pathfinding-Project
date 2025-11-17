@@ -6,7 +6,7 @@ public class FollowPath : Seek
 {
     public GameObject[] path;
     private int currentPathIndex;
-    public float targetRadius = 0.5f;
+    public float targetRadius = 1.2f;
 
     public GameObject GetCurrentWaypoint()
     {

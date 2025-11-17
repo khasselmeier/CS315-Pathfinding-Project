@@ -8,17 +8,17 @@ public class Arrive : SteeringBehavior
     public Kinematic character;
     public GameObject target;
 
-    float maxAcceleration = 100f;
-    float maxSpeed = 10f;
+    float maxAcceleration = 10f;
+    float maxSpeed = 5f;
 
     // the radius for arriving at the target
     float targetRadius = 1.5f;
 
     // the radius for beginning to slow down
-    float slowRadius = 3f;
+    float slowRadius = 2f;
 
     // the time over which to achieve target speed
-    float timeToTarget = 0.1f;
+    float timeToTarget = 1f;
 
     public override SteeringOutput getSteering()
     {

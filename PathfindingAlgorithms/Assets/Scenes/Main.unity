@@ -2440,7 +2440,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mazeParent: {fileID: 1761305997}
   nodePrefab: {fileID: 5563266647450135383, guid: 6e07a9f05d9226e42a8ca888f88cab15, type: 3}
-  nodeYOffset: 0.05
+  nodeYOffset: 0.001
   cellSpacing: 1
 --- !u!4 &895442856
 Transform:
